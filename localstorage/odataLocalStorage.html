@@ -1,16 +1,15 @@
 <html>
 <head>
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>SAP OData Local Storage Example</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<title>SAP OData Local Storage Example</title>
 
-  <!-- Load SAPUI5, select theme and control library -->
-  <script id="sap-ui-bootstrap"
-    type="text/javascript"
-    src="/openui5/resources/sap-ui-core.js"
-    data-sap-ui-theme="sap_bluecrystal"
-    data-sap-ui-libs="sap.ui.commons,sap.ui.table"></script>
+<!-- Load SAPUI5, select theme and control library -->
+<script id="sap-ui-bootstrap" type="text/javascript"
+	src="https://openui5.hana.ondemand.com/resources/sap-ui-core.js"
+	data-sap-ui-theme="sap_bluecrystal"
+	data-sap-ui-libs="sap.ui.commons,sap.ui.table"></script>
 
-  <script>
+<script>
 
     var oTable = new sap.ui.table.Table();
     oTable.setColumnHeaderHeight(30);
@@ -82,35 +81,50 @@
       return JSON.parse(oStorage.get(DATA_STORE));
     };
 
-    $.sap.require("jquery.sap.storage");
 
-    var DATA_STORE = "RMTSAMPLEFLIGHT1";
-    var oStorage =  $.sap.storage(jQuery.sap.storage.Type.local);
-        oModel = {},
-        jsonData = getOdataFromStorage(); 
+	checkHostReachable = function() {
+		// Handle IE and more capable browsers
+		var xhr = new (window.ActiveXObject || XMLHttpRequest)(
+				"Microsoft.XMLHTTP");
 
-    if (jsonData){
-      oModel = new sap.ui.model.json.JSONModel();
-      oModel.setData(jsonData);
-    } else {  
-      var sServiceUrl = "../../sap/opu/sdata/iwfnd/RMTSAMPLEFLIGHT",
-          sUser = "developer",
-          sPassword = "ch4ngeme",
-      oModel = new sap.ui.model.odata.ODataModel(sServiceUrl, true, sUser, sPassword);
-        //onLoad put doata to local storage
-      oModel.attachRequestCompleted(putOdataToStorage,this);
-    };
-         
-    oTable.setModel(oModel);
-    oTable.bindRows("/TravelagencyCollection");
-    oTable.placeAt("dataTable");
+		// Open new request as a HEAD to the root hostname with a random param to bust the cache
+		xhr.open("HEAD", server + "/sap/public/ping" + "/?rand="
+				+ Math.floor((1 + Math.random()) * 0x10000), false);
 
-  </script>
+		// Issue request and handle response
+		try {
+			xhr.send();
+			return (xhr.status >= 200 && xhr.status < 300 || xhr.status === 304);
+		} catch (error) {
+			return false;
+		}
+	};
+
+	$.sap.require("jquery.sap.storage");
+	var DATA_STORE = "RMTSAMPLEFLIGHT1";
+	var server = "https://sapes1.sapdevcenter.com";
+	var oStorage = $.sap.storage(jQuery.sap.storage.Type.local);
+	var oModel = {};
+
+	if (this.checkHostReachable()) {
+		var sServiceUrl = server + "/sap/opu/odata/IWFND/RMTSAMPLEFLIGHT", sUser = "<user>", sPassword = "<password>", oModel = new sap.ui.model.odata.ODataModel(
+				sServiceUrl, true, sUser, sPassword);
+		//onLoad put Odata to local storage
+		oModel.attachRequestCompleted(putOdataToStorage, this);
+	} else {
+		oModel = new sap.ui.model.json.JSONModel();
+		jsonData = getOdataFromStorage();
+		oModel.setData(jsonData);
+	}
+	oTable.setModel(oModel);
+	oTable.bindRows("/TravelagencyCollection");
+	oTable.placeAt("dataTable");
+</script>
 
 </head>
 <body class="sapUiBody">
-  <h1>SAP OData Local Storage Example</h1>
-  <div id="dataTable"></div>
+	<h1>SAP OData Local Storage Example</h1>
+	<div id="dataTable"></div>
 
 </body>
 </html>
